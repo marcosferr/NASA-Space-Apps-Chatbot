@@ -1,5 +1,19 @@
 const mongoose = require("mongoose");
 
+const chatSchema = new mongoose.Schema(
+  {
+    message: {
+      type: String,
+      required: true,
+    },
+    response: {
+      type: String,
+      required: true,
+    },
+  },
+  { _id: false }
+);
+
 const sessionSchema = new mongoose.Schema(
   {
     token: {
@@ -9,12 +23,8 @@ const sessionSchema = new mongoose.Schema(
     threadID: {
       type: String,
     },
-    messages: {
-      type: Array,
-      default: [],
-    },
-    responses: {
-      type: Array,
+    chat: {
+      type: [chatSchema],
       default: [],
     },
     userAgent: {

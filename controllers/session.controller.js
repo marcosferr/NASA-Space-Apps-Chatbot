@@ -3,6 +3,7 @@ const uuid = require("uuid");
 const errorHandler = require("../utils/errorHandler");
 const openai = require("../utils/openai");
 const removeMd = require("remove-markdown");
+
 exports.sessionHandler = async (req, res, next) => {
   // Check if cookie exists
   if (!req.cookies.sessionToken) {
@@ -46,12 +47,6 @@ exports.newMessage = async (req, res) => {
   const { message } = req.body;
   const { session } = req;
 
-  //Add message to the session messages
-  await Session.updateOne(
-    { _id: session._id },
-    { $push: { messages: message } }
-  );
-
   try {
     // Check if session has a threadID
     if (!session.threadID) {
@@ -85,11 +80,13 @@ exports.newMessage = async (req, res) => {
     response = removeMd(response);
     response = response.replace(/【\d+†source】/g, "");
 
+    // Add the message and response to the session chat
     await Session.updateOne(
       { _id: session._id },
-      { $push: { responses: response } }
+      { $push: { chat: { message, response } } }
     );
     await session.save();
+
     // Return the response
     res.json({ response });
   } catch (error) {
