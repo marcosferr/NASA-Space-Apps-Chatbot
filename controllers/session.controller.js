@@ -119,6 +119,13 @@ exports.newMessage = async (req, res) => {
                 description:
                   "Array of image URLs. Can contain multiple images.",
               },
+              followup_questions: {
+                type: "array",
+                items: {
+                  type: "string",
+                  description: "Follow-up questions for the user",
+                },
+              },
             },
             required: ["response"],
           },
@@ -148,6 +155,7 @@ exports.newMessage = async (req, res) => {
             response: parsedResponse.response,
             support_images: parsedResponse.support_images,
             references: parsedResponse.references,
+            followup_questions: parsedResponse.followup_questions,
           },
         },
       }
@@ -159,6 +167,7 @@ exports.newMessage = async (req, res) => {
       response: parsedResponse.response,
       img_url: parsedResponse.support_images,
       references: parsedResponse.references,
+      followup_questions: parsedResponse.followup_questions,
     });
   } catch (error) {
     console.error("Error sending message:", error);

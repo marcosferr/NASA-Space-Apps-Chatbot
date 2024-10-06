@@ -14,6 +14,14 @@ const chatSchema = new mongoose.Schema(
       type: Array,
       required: false,
     },
+    references: {
+      type: Array,
+      required: false,
+    },
+    followup_questions: {
+      type: Array,
+      required: false,
+    },
   },
   { _id: false }
 );
