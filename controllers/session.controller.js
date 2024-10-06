@@ -6,6 +6,7 @@ const removeMd = require("remove-markdown");
 
 exports.sessionHandler = async (req, res, next) => {
   // Check if cookie exists
+  // Check
   if (!req.cookies.sessionToken) {
     // Generate a random token
     const token = uuid.v4();
