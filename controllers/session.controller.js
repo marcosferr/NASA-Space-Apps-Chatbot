@@ -97,11 +97,19 @@ exports.newMessage = async (req, res) => {
       functions: [
         {
           name: "give_answer_with_image",
-          description: "Provide a response with a support image",
+          description:
+            "Provide a response with a support image and url or cite references",
           parameters: {
             type: "object",
             properties: {
               response: { type: "string" },
+              references: {
+                type: "array",
+                items: {
+                  type: "string",
+                  description: "References of the content",
+                },
+              },
               support_images: {
                 type: "array",
                 items: {
@@ -139,6 +147,7 @@ exports.newMessage = async (req, res) => {
             message,
             response: parsedResponse.response,
             support_images: parsedResponse.support_images,
+            references: parsedResponse.references,
           },
         },
       }
@@ -149,6 +158,7 @@ exports.newMessage = async (req, res) => {
     res.json({
       response: parsedResponse.response,
       img_url: parsedResponse.support_images,
+      references: parsedResponse.references,
     });
   } catch (error) {
     console.error("Error sending message:", error);
