@@ -70,7 +70,11 @@ exports.newMessage = async (req, res) => {
       assistant_id: process.env.ASSISTANT_ID,
     });
 
-    await checkRunStatus(session, run);
+    const runResults = await checkRunStatus(session, run);
+
+    if (runResults.status !== "completed") {
+      throw new Error(`Run failed with status: ${runResults.status}`);
+    }
 
     const messages = await openai.beta.threads.messages.list(session.threadID);
 
@@ -80,32 +84,90 @@ exports.newMessage = async (req, res) => {
     response = removeMd(response);
     response = response.replace(/【\d+†source】/g, "");
 
+    // Call a normal chat completion to get a parseable JSON object
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant. Parse the content into json",
+        },
+        { role: "user", content: response },
+      ],
+      functions: [
+        {
+          name: "give_answer_with_image",
+          description: "Provide a response with a support image",
+          parameters: {
+            type: "object",
+            properties: {
+              response: { type: "string" },
+              support_images: {
+                type: "array",
+                items: {
+                  type: "string",
+                  description: "URL of the image",
+                },
+                description:
+                  "Array of image URLs. Can contain multiple images.",
+              },
+            },
+            required: ["response"],
+          },
+        },
+      ],
+      function_call: { name: "give_answer_with_image" },
+    });
+
+    const parsedResponse = JSON.parse(
+      completion.choices[0].message.function_call.arguments
+    );
+    console.log(parsedResponse);
+    console.log(parsedResponse.response);
+
+    if (!parsedResponse.response) {
+      throw new Error(
+        "Parsed response is missing the required `response` field."
+      );
+    }
     // Add the message and response to the session chat
     await Session.updateOne(
       { _id: session._id },
-      { $push: { chat: { message, response } } }
+      {
+        $push: {
+          chat: {
+            message,
+            response: parsedResponse.response,
+            support_images: parsedResponse.support_images,
+          },
+        },
+      }
     );
     await session.save();
 
     // Return the response
-    res.json({ response });
+    res.json({
+      response: parsedResponse.response,
+      img_url: parsedResponse.support_images,
+    });
   } catch (error) {
     console.error("Error sending message:", error);
     return new errorHandler(500, "Internal server error");
   }
 };
 
-// Check the status of the run every second until it's completed
-const checkRunStatus = async (session, run) => {
-  let runResults;
-  while (true) {
-    runResults = await openai.beta.threads.runs.retrieve(
+const checkRunStatus = async (session, run, maxAttempts = 30) => {
+  let attempts = 0;
+  while (attempts < maxAttempts) {
+    const runResults = await openai.beta.threads.runs.retrieve(
       session.threadID,
       run.id
     );
-    if (runResults.status === "completed") {
+    if (runResults.status === "completed" || runResults.status === "failed") {
       return runResults;
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second before checking again
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    attempts++;
   }
+  throw new Error("Run timed out");
 };
