@@ -106,8 +106,18 @@ exports.newMessage = async (req, res) => {
               references: {
                 type: "array",
                 items: {
-                  type: "string",
+                  type: "object",
                   description: "References of the content",
+                  properties: {
+                    label: {
+                      type: "string",
+                      description: "Title of the reference",
+                    },
+                    url: {
+                      type: "string",
+                      description: "URL of the reference",
+                    },
+                  },
                 },
               },
               support_images: {
