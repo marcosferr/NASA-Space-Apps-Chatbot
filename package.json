@@ -21,6 +21,7 @@
     "openai": "^4.24.1",
     "ratelimit": "^0.0.4",
     "remove-markdown": "^0.5.0",
+    "tmp": "^0.2.3",
     "uuid": "^9.0.1",
     "xss-clean": "^0.1.4"
   }
